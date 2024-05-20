@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 )
 
 type Key struct {
@@ -22,6 +23,25 @@ type Key struct {
 
 func (k Key) Name() string {
 	return k.name
+}
+
+func (k Key) Bech32Address(prefix string) (string, error) {
+	addr, err := k.GetPubKey()
+	if err != nil {
+		return "", err
+	}
+	return bech32.ConvertAndEncode(prefix, addr)
+}
+
+func (k Key) GetPubKey() (cryptotypes.PubKey, error) {
+	if k.IsAminoEncoded() {
+		return k.info.GetPubKey(), nil
+	}
+	pk, ok := k.record.PubKey.GetCachedValue().(cryptotypes.PubKey)
+	if !ok {
+		return nil, fmt.Errorf("can't get pubkey from Record")
+	}
+	return pk, nil
 }
 
 func (k Key) IsAminoEncoded() bool {
