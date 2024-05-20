@@ -26,14 +26,14 @@ func (k Key) Name() string {
 }
 
 func (k Key) Bech32Address(prefix string) (string, error) {
-	addr, err := k.GetPubKey()
+	addr, err := k.PubKey()
 	if err != nil {
 		return "", err
 	}
-	return bech32.ConvertAndEncode(prefix, addr)
+	return bech32.ConvertAndEncode(prefix, addr.Address())
 }
 
-func (k Key) GetPubKey() (cryptotypes.PubKey, error) {
+func (k Key) PubKey() (cryptotypes.PubKey, error) {
 	if k.IsAminoEncoded() {
 		return k.info.GetPubKey(), nil
 	}
@@ -52,7 +52,7 @@ func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
 	return legacyInfoFromRecord(k.record)
 }
 
-func (k Key) GetType() cosmoskeyring.KeyType {
+func (k Key) Type() cosmoskeyring.KeyType {
 	if k.IsAminoEncoded() {
 		return k.info.GetType()
 	}
@@ -60,7 +60,7 @@ func (k Key) GetType() cosmoskeyring.KeyType {
 }
 
 func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
-	switch k.GetType() {
+	switch k.Type() {
 	case cosmoskeyring.TypeLocal:
 		privKey, err := k.getPrivKey()
 		if err != nil {
@@ -79,7 +79,7 @@ func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 		}
 		return signWithLedger(device, k, bz)
 	}
-	return nil, nil, fmt.Errorf("unhandled key type %q", k.GetType())
+	return nil, nil, fmt.Errorf("unhandled key type %q", k.Type())
 }
 
 func (k Key) getBip44Path() (*hd.BIP44Params, error) {
@@ -90,7 +90,7 @@ func (k Key) getBip44Path() (*hd.BIP44Params, error) {
 }
 
 func (k Key) getPrivKey() (cryptotypes.PrivKey, error) {
-	if k.GetType() != cosmoskeyring.TypeLocal {
+	if k.Type() != cosmoskeyring.TypeLocal {
 		return nil, fmt.Errorf("Access to priv key is only for local key type")
 	}
 	if k.IsAminoEncoded() {
