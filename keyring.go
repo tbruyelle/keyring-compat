@@ -42,7 +42,7 @@ func (k Keyring) Keys() ([]Key, error) {
 	var keys []Key
 	names, err := k.k.Keys()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("keyring.Keys: %w", err)
 	}
 	for _, name := range names {
 		if !strings.HasSuffix(name, ".info") {
@@ -50,7 +50,7 @@ func (k Keyring) Keys() ([]Key, error) {
 		}
 		key, err := k.Get(name)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("key.Get: %w", err)
 		}
 		keys = append(keys, key)
 	}
@@ -81,6 +81,22 @@ func (k Keyring) Get(name string) (Key, error) {
 	var info cosmoskeyring.LegacyInfo
 	errAmino := codec.Amino.UnmarshalLengthPrefixed(item.Data, &info)
 	if errAmino == nil {
+		// After unmarshalling into &info, if we notice that the info is a
+		// multiInfo, then we unmarshal again, explicitly in a multiInfo this time.
+		// Since multiInfo implements UnpackInterfacesMessage, this will correctly
+		// unpack the underlying anys inside the multiInfo.
+		//
+		// This is a workaround, as go cannot check that an interface (Info)
+		// implements another interface (UnpackInterfacesMessage).
+		// NOTE(tb): scavanged from cosmos-sdk, maybe we should use the legacy types
+		// instead of duplicate them here.
+		_, ok := info.(legacyMultiInfo)
+		if ok {
+			var multi legacyMultiInfo
+			err = codec.Amino.UnmarshalLengthPrefixed(item.Data, &multi)
+
+			return Key{name: name, info: multi}, err
+		}
 		return Key{name: name, info: info}, nil
 	}
 	return Key{}, fmt.Errorf("cannot decode key %s: decodeProto=%v decodeAmino=%v", name, errProto, errAmino)
