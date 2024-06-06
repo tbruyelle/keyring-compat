@@ -13,24 +13,20 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
-func signWithLedger(device *ledger.LedgerCosmos, k Key, bzToSign []byte) ([]byte, cryptotypes.PubKey, error) {
+func signWithLedger(device *ledger.LedgerCosmos, k Key, bzToSign []byte) ([]byte, error) {
 	path, err := k.getBip44Path()
 	if err != nil {
-		return nil, nil, err
-	}
-	pubKey, err := getLedgerPubKey(device, path.DerivationPath())
-	if err != nil {
-		return nil, nil, err
+		return nil, fmt.Errorf("getBip44Path: %w", err)
 	}
 	signature, err := device.SignSECP256K1(path.DerivationPath(), bzToSign, 0)
 	if err != nil {
-		return nil, nil, err
+		return nil, fmt.Errorf("SignSECP256K1: %w", err)
 	}
 	signature, err = convertDERtoBER(signature)
 	if err != nil {
-		return nil, nil, err
+		return nil, fmt.Errorf("convertDERtoBER: %w", err)
 	}
-	return signature, pubKey, nil
+	return signature, nil
 }
 
 func getLedgerPubKey(device *ledger.LedgerCosmos, bip32Path []uint32) (cryptotypes.PubKey, error) {

@@ -70,7 +70,7 @@ func TestKey(t *testing.T) {
 	// Sign()
 	expectedSignatureHex := "e1de06494e239e95a68b74b55460d1f1f376318bbd08af8f221f102ef8bc8f6d87922d8326defe6f4c71d577a17e105bf8ea7e4428cc410999fcc214f4068503"
 	for _, key := range []keyring.Key{protoKey, aminoKey} {
-		signature, _, err := key.Sign([]byte("hello world"))
+		signature, err := key.Sign([]byte("hello world"))
 		require.NoError(err)
 		assert.Equal(expectedSignatureHex, hex.EncodeToString(signature))
 	}

@@ -78,27 +78,27 @@ func (k Key) Type() cosmoskeyring.KeyType {
 	return k.record.GetType()
 }
 
-func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
+func (k Key) Sign(bz []byte) ([]byte, error) {
 	switch k.Type() {
 	case cosmoskeyring.TypeLocal:
 		privKey, err := k.getPrivKey()
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		signature, err := privKey.Sign(bz)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		return signature, privKey.PubKey(), nil
+		return signature, nil
 
 	case cosmoskeyring.TypeLedger:
 		device, err := ledger.FindLedgerCosmosUserApp()
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		return signWithLedger(device, k, bz)
 	}
-	return nil, nil, fmt.Errorf("unhandled key type %q", k.Type())
+	return nil, fmt.Errorf("unhandled key type %q", k.Type())
 }
 
 func (k Key) getBip44Path() (*hd.BIP44Params, error) {
