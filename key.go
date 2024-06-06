@@ -7,6 +7,8 @@ import (
 
 	ledger "github.com/cosmos/ledger-cosmos-go"
 
+	cosmoscodec "github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -26,11 +28,11 @@ func (k Key) Name() string {
 }
 
 func (k Key) Bech32Address(prefix string) (string, error) {
-	addr, err := k.PubKey()
+	pk, err := k.PubKey()
 	if err != nil {
 		return "", err
 	}
-	return bech32.ConvertAndEncode(prefix, addr.Address())
+	return bech32.ConvertAndEncode(prefix, pk.Address())
 }
 
 func (k Key) PubKey() (cryptotypes.PubKey, error) {
@@ -42,6 +44,23 @@ func (k Key) PubKey() (cryptotypes.PubKey, error) {
 		return nil, fmt.Errorf("can't get pubkey from Record")
 	}
 	return pk, nil
+}
+
+// ProtoJSONPubKey returns k's public key in the proto JSON format.
+func (k Key) ProtoJSONPubKey() ([]byte, error) {
+	pk, err := k.PubKey()
+	if err != nil {
+		return nil, fmt.Errorf("PubKey: %w", err)
+	}
+	apk, err := codectypes.NewAnyWithValue(pk)
+	if err != nil {
+		return nil, fmt.Errorf("NewAnyWithValue: %w", err)
+	}
+	bz, err := cosmoscodec.ProtoMarshalJSON(apk, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ProtoMarshalJSON: %w", err)
+	}
+	return bz, nil
 }
 
 func (k Key) IsAminoEncoded() bool {

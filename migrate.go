@@ -49,7 +49,7 @@ func (kr Keyring) MigrateProtoKeysToAmino() error {
 		if err := aminoKr.AddAmino(key.name, info); err != nil {
 			return err
 		}
-		fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
+		fmt.Printf("%q re-encoded to amino keyring %q\n", key.name, aminoKeyringDir)
 	}
 	return nil
 }
