@@ -13,7 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func TestKey(t *testing.T) {
+func TestKeyring(t *testing.T) {
 	//-----------------------------------------
 	// Setup
 	require := require.New(t)
