@@ -64,8 +64,27 @@ func (k Keyring) Keys() ([]Key, error) {
 	return keys, nil
 }
 
+func (k Keyring) Remove(name string) error {
+	key, err := k.Get(name)
+	if err != nil {
+		return err
+	}
+	if err := k.k.Remove(name + infoSuffix); err != nil {
+		return err
+	}
+	addr, err := key.Address()
+	if err != nil {
+		return err
+	}
+	return k.k.Remove(addrHexKey(addr))
+}
+
+func addrHexKey(address sdk.Address) string {
+	return hex.EncodeToString(address.Bytes()) + addressSuffix
+}
+
 func (k Keyring) GetByAddress(addr sdk.Address) (Key, error) {
-	item, err := k.k.Get(hex.EncodeToString(addr.Bytes()) + addressSuffix)
+	item, err := k.k.Get(addrHexKey(addr))
 	if err != nil {
 		return Key{}, err
 	}
@@ -124,8 +143,7 @@ func (k Keyring) AddAmino(name string, info cosmoskeyring.LegacyInfo) error {
 	if err != nil {
 		return err
 	}
-	addr := hex.EncodeToString(info.GetAddress())
-	return k.k.Set(keyring.Item{Key: addr + addressSuffix, Data: []byte(name)})
+	return k.k.Set(keyring.Item{Key: addrHexKey(info.GetAddress()), Data: []byte(name)})
 }
 
 func (k Keyring) AddProto(name string, record *cosmoskeyring.Record) error {
@@ -146,6 +164,5 @@ func (k Keyring) AddProto(name string, record *cosmoskeyring.Record) error {
 	if !ok {
 		return fmt.Errorf("can't get pubkey from Record")
 	}
-	addr := hex.EncodeToString(pk.Address().Bytes())
-	return k.k.Set(keyring.Item{Key: addr + addressSuffix, Data: []byte(name)})
+	return k.k.Set(keyring.Item{Key: addrHexKey(sdk.AccAddress(pk.Address())), Data: []byte(name)})
 }

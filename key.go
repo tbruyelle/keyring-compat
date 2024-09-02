@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 )
 
@@ -52,6 +53,14 @@ func (k Key) PubKey() (cryptotypes.PubKey, error) {
 		return nil, fmt.Errorf("can't get pubkey from Record")
 	}
 	return pk, nil
+}
+
+func (k Key) Address() (sdk.AccAddress, error) {
+	pk, err := k.PubKey()
+	if err != nil {
+		return nil, err
+	}
+	return pk.Address().Bytes(), nil
 }
 
 // ProtoJSONPubKey returns k's public key in the proto JSON format.

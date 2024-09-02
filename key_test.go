@@ -86,4 +86,13 @@ func TestKey(t *testing.T) {
 		require.NoError(err)
 		assert.Equal(expectedSignatureHex, hex.EncodeToString(signature))
 	}
+
+	//-----------------------------------------
+	//  Remove()
+	err = kr.Remove("amino")
+	require.NoError(err)
+	_, err = kr.Get("amino")
+	require.EqualError(err, "The specified item could not be found in the keyring")
+	_, err = kr.GetByAddress(sdk.AccAddress(pb.Address().Bytes()))
+	require.EqualError(err, "The specified item could not be found in the keyring")
 }
