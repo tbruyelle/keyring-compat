@@ -20,8 +20,6 @@ import (
 // properly migrated by listing the keys from kr.dir/amino. Once you are OK
 // with the result, you can simply copy the *.info files from kr.dir/amino
 // into kr.dir, assuming that you used the same password for both keyring.
-//
-// TODO create kr.dir/amino/keyhash file
 func (kr Keyring) MigrateProtoKeysToAmino() error {
 	// new keyring for migrated keys
 	aminoKeyringDir := filepath.Join(kr.dir, "amino")
