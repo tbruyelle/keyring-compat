@@ -11,6 +11,13 @@ import (
 	"github.com/tbruyelle/keyring-compat/codec"
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+const (
+	infoSuffix    = ".info"
+	addressSuffix = ".address"
 )
 
 type Keyring struct {
@@ -45,7 +52,7 @@ func (k Keyring) Keys() ([]Key, error) {
 		return nil, fmt.Errorf("keyring.Keys: %w", err)
 	}
 	for _, name := range names {
-		if !strings.HasSuffix(name, ".info") {
+		if !strings.HasSuffix(name, infoSuffix) {
 			continue
 		}
 		key, err := k.Get(name)
@@ -57,15 +64,18 @@ func (k Keyring) Keys() ([]Key, error) {
 	return keys, nil
 }
 
-func (k Keyring) GetByAddress(addr string) (Key, error) {
-	item, err := k.k.Get(hex.EncodeToString([]byte(addr)) + ".address")
+func (k Keyring) GetByAddress(addr sdk.Address) (Key, error) {
+	item, err := k.k.Get(hex.EncodeToString(addr.Bytes()) + addressSuffix)
 	if err != nil {
 		return Key{}, err
 	}
-	return k.Get(string(item.Data) + ".info")
+	return k.Get(string(item.Data))
 }
 
 func (k Keyring) Get(name string) (Key, error) {
+	if !strings.HasSuffix(name, infoSuffix) {
+		name += infoSuffix
+	}
 	item, err := k.k.Get(name)
 	if err != nil {
 		return Key{}, err
@@ -103,17 +113,39 @@ func (k Keyring) Get(name string) (Key, error) {
 }
 
 func (k Keyring) AddAmino(name string, info cosmoskeyring.LegacyInfo) error {
+	if !strings.HasSuffix(name, infoSuffix) {
+		name += infoSuffix
+	}
 	bz, err := codec.Amino.MarshalLengthPrefixed(info)
 	if err != nil {
 		return err
 	}
-	return k.k.Set(keyring.Item{Key: name, Data: bz})
+	err = k.k.Set(keyring.Item{Key: name, Data: bz})
+	if err != nil {
+		return err
+	}
+	addr := hex.EncodeToString(info.GetAddress())
+	return k.k.Set(keyring.Item{Key: addr + addressSuffix, Data: []byte(name)})
 }
 
 func (k Keyring) AddProto(name string, record *cosmoskeyring.Record) error {
+	if !strings.HasSuffix(name, infoSuffix) {
+		name += infoSuffix
+	}
 	bz, err := codec.Proto.Marshal(record)
 	if err != nil {
 		return err
 	}
-	return k.k.Set(keyring.Item{Key: name, Data: bz})
+	// Record name.info key
+	err = k.k.Set(keyring.Item{Key: name, Data: bz})
+	if err != nil {
+		return err
+	}
+	// Record <address>.address key
+	pk, ok := record.PubKey.GetCachedValue().(cryptotypes.PubKey)
+	if !ok {
+		return fmt.Errorf("can't get pubkey from Record")
+	}
+	addr := hex.EncodeToString(pk.Address().Bytes())
+	return k.k.Set(keyring.Item{Key: addr + addressSuffix, Data: []byte(name)})
 }

@@ -10,6 +10,7 @@ import (
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestKey(t *testing.T) {
@@ -18,7 +19,8 @@ func TestKey(t *testing.T) {
 	require := require.New(t)
 	assert := assert.New(t)
 	kr, err := keyring.New(keyring.BackendType("file"), t.TempDir(),
-		func(_ string) (string, error) { return "test", nil })
+		func(_ string) (string, error) { return "test", nil },
+	)
 	require.NoError(err)
 	// Generate a local private key
 	var (
@@ -33,10 +35,20 @@ func TestKey(t *testing.T) {
 	require.NoError(err)
 	info, err := protoKey.RecordToInfo()
 	require.NoError(err)
+	assert.Equal(info.GetAddress().String(), protoKey.MustBech32Address("cosmos"))
+	protoKey2, err := kr.GetByAddress(info.GetAddress())
+	require.NoError(err)
+	assert.Equal(protoKey, protoKey2, "GetByAddress() != Get()")
+
 	err = kr.AddAmino("amino", info)
 	require.NoError(err)
 	aminoKey, err := kr.Get("amino")
 	require.NoError(err)
+	pb, err := aminoKey.PubKey()
+	require.NoError(err)
+	aminoKey2, err := kr.GetByAddress(sdk.AccAddress(pb.Address().Bytes()))
+	require.NoError(err)
+	assert.Equal(aminoKey, aminoKey2, "GetByAddress() != Get()")
 
 	//-----------------------------------------
 	// IsAminoEncoded()

@@ -27,6 +27,14 @@ func (k Key) Name() string {
 	return k.name
 }
 
+func (k Key) MustBech32Address(prefix string) string {
+	addr, err := k.Bech32Address(prefix)
+	if err != nil {
+		panic("MustBech32Address: " + err.Error())
+	}
+	return addr
+}
+
 func (k Key) Bech32Address(prefix string) (string, error) {
 	pk, err := k.PubKey()
 	if err != nil {
