@@ -85,7 +85,7 @@ func (k Key) IsAminoEncoded() bool {
 }
 
 func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
-	return legacyInfoFromRecord(k.record)
+	return LegacyInfoFromRecord(k.record)
 }
 
 func (k Key) Type() cosmoskeyring.KeyType {
@@ -155,8 +155,8 @@ func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKe
 	return priv, nil
 }
 
-// legacyInfoFromLegacyInfo turns a Record into a LegacyInfo.
-func legacyInfoFromRecord(record *cosmoskeyring.Record) (cosmoskeyring.LegacyInfo, error) {
+// LegacyInfoFromRecord turns a Record into a LegacyInfo.
+func LegacyInfoFromRecord(record *cosmoskeyring.Record) (cosmoskeyring.LegacyInfo, error) {
 	switch record.GetType() {
 	case cosmoskeyring.TypeLocal:
 		pk, err := record.GetPubKey()
